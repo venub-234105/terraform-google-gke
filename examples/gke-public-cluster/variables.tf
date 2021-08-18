@@ -6,16 +6,19 @@
 variable "project" {
   description = "The project ID where all resources will be launched."
   type        = string
+  default     = "caldera-321722"
 }
 
 variable "location" {
   description = "The location (region or zone) of the GKE cluster."
   type        = string
+  default     = "us-west1"
 }
 
 variable "region" {
   description = "The region for the network. If the cluster is regional, this must be the same region. Otherwise, it should be the region of the zone."
   type        = string
+  default     = "us-west1"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -26,19 +29,19 @@ variable "region" {
 variable "cluster_name" {
   description = "The name of the Kubernetes cluster."
   type        = string
-  default     = "example-cluster"
+  default     = "caldera-public-cluster"
 }
 
 variable "cluster_service_account_name" {
   description = "The name of the custom service account used for the GKE cluster. This parameter is limited to a maximum of 28 characters."
   type        = string
-  default     = "example-cluster-sa"
+  default     = "caldera-public-cluster-sa"
 }
 
 variable "cluster_service_account_description" {
   description = "A description of the custom service account used for the GKE cluster."
   type        = string
-  default     = "Example GKE Cluster Service Account managed by Terraform"
+  default     = "Public GKE Cluster Service Account managed by Terraform"
 }
 
 # For the example, we recommend a /16 network for the VPC. Note that when changing the size of the network,
@@ -105,6 +108,17 @@ variable "enable_workload_identity" {
   type        = bool
 }
 
+variable "envar1" {
+  description = "test en vars"
+  type        = string
+  default     = "one"
+}
+
+variable "envar2" {
+  description = "test en vars"
+  type        = string
+  default     = "two"
+}
 # ---------------------------------------------------------------------------------------------------------------------
 # TEST PARAMETERS
 # These parameters are only used during testing and should not be touched.

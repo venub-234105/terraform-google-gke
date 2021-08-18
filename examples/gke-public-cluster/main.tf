@@ -19,6 +19,10 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 3.43.0"
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = "~> 1.10.0"
+    }
   }
 }
 
@@ -175,4 +179,21 @@ module "vpc_network" {
   private_services_secondary_cidr_block  = var.private_services_secondary_cidr_block
   secondary_cidr_subnetwork_width_delta  = var.secondary_cidr_subnetwork_width_delta
   secondary_cidr_subnetwork_spacing      = var.secondary_cidr_subnetwork_spacing
+}
+
+provider "kubernetes" {
+  load_config_file       = false
+  host                   = "https://${module.gke_cluster.endpoint}"
+  client_certificate     = module.gke_cluster.client_certificate
+  client_key             = module.gke_cluster.client_key
+  cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
+}
+
+
+resource "kubectl_manifest" "deploy_envars_into_pods" {
+    yaml_body = templatefile("${path.module}/deploy_with_vars_as_envars.yaml", { envar1 = var.envar1, envar2 = var.envar2  })
+}
+
+resource "kubectl_manifest" "expose_caldera_app" {
+    yaml_body = file("${path.module}/expose_gke_deployment.yaml")
 }

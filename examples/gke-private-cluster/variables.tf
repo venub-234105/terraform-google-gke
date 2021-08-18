@@ -6,16 +6,19 @@
 variable "project" {
   description = "The project ID where all resources will be launched."
   type        = string
+  default     = "caldera-321722"
 }
 
 variable "location" {
   description = "The location (region or zone) of the GKE cluster."
   type        = string
+  default     = "us-west1"
 }
 
 variable "region" {
   description = "The region for the network. If the cluster is regional, this must be the same region. Otherwise, it should be the region of the zone."
   type        = string
+  default     = "us-west1"
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -103,4 +106,16 @@ variable "enable_vertical_pod_autoscaling" {
   description = "Enable vertical pod autoscaling"
   type        = string
   default     = true
+}
+
+variable "envar1" {
+  description = "test en vars"
+  type        = string
+  default     = "one"
+}
+
+variable "envar2" {
+  description = "test en vars"
+  type        = string
+  default     = "two"
 }
