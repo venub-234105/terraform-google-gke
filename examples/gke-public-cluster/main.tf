@@ -203,14 +203,24 @@ provider "kubernetes" {
   cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
 }
 
-resource "null_resource" "set_terraform_envars" {
-  provisioner "local-exec" {
-    command = "source ${path.module}/set_terraform_envars.sh"
-  }
-}
 
 resource "kubectl_manifest" "deploy_envars_into_pods" {
-    yaml_body = templatefile("${path.module}/deploy_with_vars_as_envars.yaml", { envar1 = var.envar1, envar2 = var.envar2  })
+    yaml_body = templatefile("${path.module}/deploy_with_vars_as_envars.yaml",
+    {
+      AUTHTIME_CLIENT_ID=var.AUTHTIME_CLIENT_ID,
+      AUTHTIME_CLIENT_SECRET=var.AUTHTIME_CLIENT_SECRET,
+      AUTHTIME_HOST=var.AUTHTIME_HOST,
+      AUTHTIME_TOKEN_URI=var.AUTHTIME_TOKEN_URI,
+      AUTHTIME_PROFILE_URI=var.AUTHTIME_PROFILE_URI,
+      AUTHTIME_INVITATION_URI=var.AUTHTIME_INVITATION_URI,
+      OAUTH_REDIRECT_URL=var.OAUTH_REDIRECT_URL,
+      OAUTH_INVITER_ID=var.OAUTH_INVITER_ID,
+      OAUTH_ORG_ID=var.OAUTH_ORG_ID,
+      CALDERA_SERVER_SECRET_KEY=var.CALDERA_SERVER_SECRET_KEY,
+      SPARKPOST_API_KEY=var.SPARKPOST_API_KEY,
+      RDS_USERNAME=var.RDS_USERNAME,
+      RDS_PASSWORD=var.RDS_PASSWORD
+    })
 }
 
 resource "kubectl_manifest" "expose_caldera_app" {

@@ -108,17 +108,88 @@ variable "enable_workload_identity" {
   type        = bool
 }
 
-variable "envar1" {
-  description = "test en vars"
+# ---------------------------------------------------------------------------------------------------------------------
+# Environment variables
+# These parameters are set by Terraform environment variables in the github workflow
+# ---------------------------------------------------------------------------------------------------------------------
+
+variable "AUTHTIME_CLIENT_ID" {
+  description = "Auth time client ID"
   type        = string
-  default     = "one"
+  default     = "31fb6700b8a2418ea34541f0"
 }
 
-variable "envar2" {
-  description = "test en vars"
+variable "AUTHTIME_CLIENT_SECRET" {
+  description = "Auth time client secret"
   type        = string
-  default     = "two"
+  default     = "16033864906aa2bcdcd585eb"
 }
+
+variable "AUTHTIME_HOST" {
+  description = "Auth time host"
+  type        = string
+  default     = "auth.qa.data-axle.com"
+}
+
+variable "AUTHTIME_TOKEN_URI" {
+  description = "Auth time token"
+  type        = string
+  default     = "/oauth/token"
+}
+
+variable "AUTHTIME_PROFILE_URI" {
+  description = "Auth time profile URI"
+  type        = string
+  default     = "/api/me"
+}
+
+variable "AUTHTIME_INVITATION_URI" {
+  description = "Auth time Invitation URI"
+  type        = string
+  default     = "/api/invitations"
+}
+variable "OAUTH_REDIRECT_URL" {
+  description = "OAuth redirect URL"
+  type        = string
+  default     = "http://caldera-apps.s3-website-us-east-1.amazonaws.com/oauth-callback"
+}
+
+variable "OAUTH_INVITER_ID" {
+  description = "OAuth inviter ID"
+  type        = string
+  default     = "1833d1bc568c748bae7e97fd"
+}
+variable "SPARKPOST_API_KEY" {
+  description = "Sparkpost API key"
+  type        = string
+  default     = "feaebe8c4b81741a440391f71be00c707ffc4d1b"
+}
+variable "CALDERA_SERVER_SECRET_KEY" {
+  description = "Caldera Server secret key"
+  type        = string
+  default     = "8wh1e089p9kl8tufxo0Azz0iuftx7AwfrnvQutAhN3tL1mba4j"
+}
+
+variable "OAUTH_ORG_ID" {
+  description = "Oauth Org Id"
+  type        = string
+  default     = "134"
+}
+
+variable "RDS_USERNAME" {
+  description = "Database username"
+  type        = string
+  default     = "admin"
+}
+
+variable "RDS_PASSWORD" {
+  description = "Database Passwords"
+  type        = string
+  default     = "admin1"
+}
+
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # TEST PARAMETERS
 # These parameters are only used during testing and should not be touched.

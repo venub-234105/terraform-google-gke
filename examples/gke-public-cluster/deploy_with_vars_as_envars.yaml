@@ -14,9 +14,31 @@ spec:
     spec:
       containers:
       - name: caldera-app
-        image: gcr.io/google-samples/node-hello:1.0
+        image: gcr.io/bigquery-poc-309702/caldera-server@sha256:9965df5085a636b268b1f8e058247b2fc7a19f3a87e40cc480364e4f990ae449
         env:
-          - name: ENVAR1
-            value: ${envar1}
-          - name: ENVAR2
-            value: ${envar2}
+          - name: AUTHTIME_CLIENT_ID
+            value: ${AUTHTIME_CLIENT_ID}
+          - name: AUTHTIME_CLIENT_SECRET
+            value: ${AUTHTIME_CLIENT_SECRET}
+          - name: AUTHTIME_HOST
+            value: ${AUTHTIME_HOST}
+          - name: AUTHTIME_TOKEN_URI
+            value: ${AUTHTIME_TOKEN_URI}
+          - name: AUTHTIME_PROFILE_URI
+            value: ${AUTHTIME_PROFILE_URI}
+          - name: AUTHTIME_INVITATION_URI
+            value: ${AUTHTIME_INVITATION_URI}
+          - name: OAUTH_REDIRECT_URL
+            value: ${OAUTH_REDIRECT_URL}
+          - name: OAUTH_INVITER_ID
+            value: ${OAUTH_INVITER_ID}
+          - name: OAUTH_ORG_ID
+            value: '${OAUTH_ORG_ID}'
+          - name: CALDERA_SERVER_SECRET_KEY
+            value: ${CALDERA_SERVER_SECRET_KEY}
+          - name: SPARKPOST_API_KEY
+            value: ${SPARKPOST_API_KEY}
+          - name: RDS_USERNAME
+            value: ${RDS_USERNAME}
+          - name: RDS_PASSWORD
+            value: ${RDS_PASSWORD}
