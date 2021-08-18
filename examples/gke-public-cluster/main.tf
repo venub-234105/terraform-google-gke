@@ -19,6 +19,10 @@ terraform {
       source  = "hashicorp/google-beta"
       version = "~> 3.43.0"
     }
+    kubernetes = {
+      source = "hashicorp/kubernetes"
+      version = ">= 2.0.1"
+    }
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = "~> 1.10.0"
@@ -181,14 +185,29 @@ module "vpc_network" {
   secondary_cidr_subnetwork_spacing      = var.secondary_cidr_subnetwork_spacing
 }
 
-provider "kubernetes" {
-  load_config_file       = false
+# Retrieve an access token as the Terraform runner
+data "google_client_config" "provider" {}
+
+provider "kubectl" {
   host                   = "https://${module.gke_cluster.endpoint}"
-  client_certificate     = module.gke_cluster.client_certificate
-  client_key             = module.gke_cluster.client_key
+  token                   = data.google_client_config.provider.access_token
   cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
 }
 
+provider "kubernetes" {
+  load_config_file       = false
+  host                   = "https://${module.gke_cluster.endpoint}"
+  token                   = data.google_client_config.provider.access_token
+  //client_certificate     = module.gke_cluster.client_certificate
+  //client_key             = module.gke_cluster.client_key
+  cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
+}
+
+resource "null_resource" "set_terraform_envars" {
+  provisioner "local-exec" {
+    command = "source ${path.module}/set_terraform_envars.sh"
+  }
+}
 
 resource "kubectl_manifest" "deploy_envars_into_pods" {
     yaml_body = templatefile("${path.module}/deploy_with_vars_as_envars.yaml", { envar1 = var.envar1, envar2 = var.envar2  })
