@@ -203,6 +203,9 @@ provider "kubernetes" {
   cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
 }
 
+resource "kubectl_manifest" "create_namespace" {
+    yaml_body = templatefile("${path.module}/create-namespace.yaml", {GKE_NAMESPACE=var.GKE_NAMESPACE})
+}
 
 resource "kubectl_manifest" "deploy_envars_into_pods" {
     yaml_body = templatefile("${path.module}/deploy_with_vars_as_envars.yaml",
@@ -219,10 +222,11 @@ resource "kubectl_manifest" "deploy_envars_into_pods" {
       CALDERA_SERVER_SECRET_KEY=var.CALDERA_SERVER_SECRET_KEY,
       SPARKPOST_API_KEY=var.SPARKPOST_API_KEY,
       RDS_USERNAME=var.RDS_USERNAME,
-      RDS_PASSWORD=var.RDS_PASSWORD
+      RDS_PASSWORD=var.RDS_PASSWORD,
+      GKE_NAMESPACE=var.GKE_NAMESPACE
     })
 }
 
 resource "kubectl_manifest" "expose_caldera_app" {
-    yaml_body = file("${path.module}/expose_gke_deployment.yaml")
+    yaml_body = templatefile("${path.module}/expose_gke_deployment.yaml" , {GKE_NAMESPACE=var.GKE_NAMESPACE})
 }

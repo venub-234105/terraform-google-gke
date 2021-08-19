@@ -185,10 +185,14 @@ variable "RDS_USERNAME" {
 variable "RDS_PASSWORD" {
   description = "Database Passwords"
   type        = string
-  default     = "admin1"
+  default     = "admin"
 }
 
-
+variable "GKE_NAMESPACE" {
+  description = "Namespace where the app needs to be deployed (test/prod)"
+  type        = string
+  default     = "test"
+}
 
 # ---------------------------------------------------------------------------------------------------------------------
 # TEST PARAMETERS

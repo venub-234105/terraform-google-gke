@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: caldera-app-deploy
+  namespace: ${GKE_NAMESPACE}
 spec:
   replicas: 2
   selector:
@@ -14,6 +15,8 @@ spec:
     spec:
       containers:
       - name: caldera-app
+        imagePullSecrets:
+          - name: gcrpullsecret
         image: gcr.io/bigquery-poc-309702/caldera-server@sha256:9965df5085a636b268b1f8e058247b2fc7a19f3a87e40cc480364e4f990ae449
         env:
           - name: AUTHTIME_CLIENT_ID

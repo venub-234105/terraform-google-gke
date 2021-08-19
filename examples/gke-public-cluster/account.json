@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "bigquery-poc-309702",
+  "private_key_id": "6b98e362ed9ed712f189dab5e43fe8e89bb2f16e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDBXa7dQHAZK738\nG1FBIls8QQTSHAd0OWgbaafcIHN6pcUh5vy3V9iQxAz2X6lPvUGR0NV5fbWC1Z6Y\nMl1/d4rS5PY3ICWR+l9iU67XDvaf5u1aupMP4v7cFwSBJtkqH3HTG4l+dl7CqUg5\nk72fkXecqJd6/KzDsMNoFCV0bZe86Ozt+yEiXJVUZY3jPGQjM0LygaetlFUUspwY\n24AUjwr7k0MRJ5LTpZX3mdH1+TIRCF8PKyD9H/5JEVsqmjy4zVAuZY2UtD+OM51G\nOMU53GbvEqH8Nxt2kdG9+SKTjEAsHnE42D2UuIp0O3C0SKo8MYq/2nHWRGVXmf4P\nwVyHJkO1AgMBAAECggEABB7PbZaEbPziIP+iBR3KzOdjx2hifkcE4WSod4fXfhsP\nLtBBvVRpYHhVAGD8dh8FySomil6z4fRUW1DjbiZpdmH7nyQXuNsZcjpvRNTkS3b7\nws2r+ZAwNxdkeK4PvZaK8eEp1mCGV2aNC/EKft52KofrJmtA8TCQkWSwgaEeNR/G\nBTXsalCfvUdpj/euKl45m4wz6Cx6K4iPwV0A1EG3Fnv7OCrKPas4zW24+Kn91+xi\nrVNmqRZReY433SbwOmLD0vL21wnS5ip8YkgnCMPReJ4o3G/UZsE8QtZ+2z2KwDm7\nQgVnJAj5YjzpoSEOsO5Z23VqdjV1OvYhbdDmucI5dwKBgQDgY1Jo5M2E08HjX/1W\nkwmzBMExtC6LrbydayVARaSay1ccHAgUN8v/6bK/uYdS5TIgbzH/vO7YE3By9W5t\nM+Vvr99qHNYg5KzR9VNtnsI2AzxkOYo1o1dnBey9xgIBwMvZgHYMv9QMBhqpi/5K\nVy+JMWe9pq1sFbOUwkw/m+3Q8wKBgQDcm4jMumOzTey/EOeWTr0ituIy/rwoLJ/I\nnUH980u3L8OVvpW/9+GQzV76VZDZx24C6sBlcj2x60I9SjJuk9jl9FfMZJbpxw+4\nwIc+Us+4xQqsX6ZrclInPtRyaqjzZOjqEwDpiIVGwUyF47JBd2CiucCJLPJGoZ2/\nMhU7OmwCtwKBgAgwl9lsQHQQpor9/ekjBL+b9NEzml9OwAue1YU7BX8A3PURsNnM\nD44PoY6N3vqPkvzMEi8bXjxUuU3410b1FfK1oJnm44nfzs76/UiK+tut0o516y16\nAL6p4LIsf/ZAazBNGAHvHnYx4tc9XNKpy/pd60Noyfuf7yYG0XGg51UxAoGATGiG\ngjpQi+sCg87sF3BgK+TiBb2bF+MU2Jw3HiklYWZmvLfNEDdf5hJrwhLe378mSFZc\nmwZtffE4+Rd4zjnhFwyBWGbCqmfq9xegACMYlSuSHc/nSTHIaJVnadWtfNfHoENC\nvqAtYStUQM9zjx801ke1+w0ZQQN7KpzDI8eBX5MCgYEAlt3gX6ItiGCV1+9yvMZE\nkdp0v/YUleVuAtR7ieehmhVykkwtjsDDXMgedbkB2yMm2pXbF398X6oUOw/W0gSO\nxZEDVJPjDuCAjfO606yC5qjbweOrWev3p/RoK56ToeaMo05gk0BX6rAO5O4DVjJW\nSMQfzHN1CDv3C+5ddxyqMd0=\n-----END PRIVATE KEY-----\n",
+  "client_email": "caldera-service-account@bigquery-poc-309702.iam.gserviceaccount.com",
+  "client_id": "108127709439486929823",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/caldera-service-account%40bigquery-poc-309702.iam.gserviceaccount.com"
+}
