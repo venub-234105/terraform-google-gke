@@ -17,7 +17,7 @@ terraform {
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 3.43.0"
+      version = "~> 3.57.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
@@ -26,6 +26,10 @@ terraform {
     helm = {
       source  = "hashicorp/helm"
       version = "~> 1.1.1"
+    }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = "~> 1.10.0"
     }
   }
 }
@@ -66,32 +70,8 @@ provider "google-beta" {
   ]
 }
 
-# We use this data provider to expose an access token for communicating with the GKE cluster.
-data "google_client_config" "client" {}
-
-# Use this datasource to access the Terraform account's email for Kubernetes permissions.
-data "google_client_openid_userinfo" "terraform_user" {}
-
-provider "kubernetes" {
-
-  load_config_file       = false
-  host                   = data.template_file.gke_host_endpoint.rendered
-  token                  = data.template_file.access_token.rendered
-  cluster_ca_certificate = data.template_file.cluster_ca_certificate.rendered
-}
-
-provider "helm" {
-
-  kubernetes {
-    host                   = data.template_file.gke_host_endpoint.rendered
-    token                  = data.template_file.access_token.rendered
-    cluster_ca_certificate = data.template_file.cluster_ca_certificate.rendered
-    load_config_file       = false
-  }
-}
-
 # ---------------------------------------------------------------------------------------------------------------------
-# DEPLOY A PUBLIC CLUSTER IN GOOGLE CLOUD PLATFORM
+# DEPLOY A PRIVATE CLUSTER IN GOOGLE CLOUD PLATFORM
 # ---------------------------------------------------------------------------------------------------------------------
 
 module "gke_cluster" {
@@ -104,18 +84,39 @@ module "gke_cluster" {
 
   project  = var.project
   location = var.location
+  network  = module.vpc_network.network
 
   # We're deploying the cluster in the 'public' subnetwork to allow outbound internet access
   # See the network access tier table for full details:
   # https://github.com/gruntwork-io/terraform-google-network/tree/master/modules/vpc-network#access-tier
-  network                      = module.vpc_network.network
-  subnetwork                   = module.vpc_network.public_subnetwork
-  cluster_secondary_range_name = module.vpc_network.public_subnetwork_secondary_range_name
+  subnetwork                    = module.vpc_network.public_subnetwork
+  cluster_secondary_range_name  = module.vpc_network.public_subnetwork_secondary_range_name
+  services_secondary_range_name = module.vpc_network.public_services_secondary_range_name
+
+  # When creating a private cluster, the 'master_ipv4_cidr_block' has to be defined and the size must be /28
+  master_ipv4_cidr_block = var.master_ipv4_cidr_block
+
+  # This setting will make the cluster private
+  enable_private_nodes = "true"
 
   # To make testing easier, we keep the public endpoint available. In production, we highly recommend restricting access to only within the network boundary, requiring your users to use a bastion host or VPN.
   disable_public_endpoint = "false"
 
-  # add resource labels to the cluster
+  # With a private cluster, it is highly recommended to restrict access to the cluster master
+  # However, for testing purposes we will allow all inbound traffic.
+  master_authorized_networks_config = [
+    {
+      cidr_blocks = [
+        {
+          cidr_block   = "0.0.0.0/0"
+          display_name = "all-for-testing"
+        },
+      ]
+    },
+  ]
+
+  enable_vertical_pod_autoscaling = var.enable_vertical_pod_autoscaling
+
   resource_labels = {
     environment = "testing"
   }
@@ -150,14 +151,14 @@ resource "google_container_node_pool" "node_pool" {
     machine_type = "n1-standard-1"
 
     labels = {
-      all-pools-example = "true"
+      private-pools-example = "true"
     }
 
     # Add a public tag to the instances. See the network access tier table for full details:
     # https://github.com/gruntwork-io/terraform-google-network/tree/master/modules/vpc-network#access-tier
     tags = [
-      module.vpc_network.public,
-      "helm-example",
+      module.vpc_network.private,
+      "private-pool-example"
     ]
 
     disk_size_gb = "30"
@@ -208,7 +209,7 @@ resource "random_string" "suffix" {
 }
 
 module "vpc_network" {
-  source = "github.com/gruntwork-io/terraform-google-network.git//modules/vpc-network?ref=v0.7.1"
+  source = "github.com/gruntwork-io/terraform-google-network.git//modules/vpc-network?ref=v0.9.0"
 
   name_prefix = "${var.cluster_name}-network-${random_string.suffix.result}"
   project     = var.project
@@ -225,76 +226,133 @@ module "vpc_network" {
   secondary_cidr_subnetwork_spacing      = var.secondary_cidr_subnetwork_spacing
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# CONFIGURE KUBECTL AND RBAC ROLE PERMISSIONS
-# ---------------------------------------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# CREATE A RANDOM SUFFIX AND PREPARE RESOURCE NAMES
+# ------------------------------------------------------------------------------
 
-# configure kubectl with the credentials of the GKE cluster
-resource "null_resource" "configure_kubectl" {
-  provisioner "local-exec" {
-    command = "gcloud beta container clusters get-credentials ${module.gke_cluster.name} --region ${var.region} --project ${var.project}"
-
-    # Use environment variables to allow custom kubectl config paths
-    environment = {
-      KUBECONFIG = var.kubectl_config_path != "" ? var.kubectl_config_path : ""
-    }
-  }
-
-  depends_on = [google_container_node_pool.node_pool]
+resource "random_id" "name" {
+  byte_length = 2
 }
 
-resource "kubernetes_cluster_role_binding" "user" {
-  metadata {
-    name = "admin-user"
-  }
+locals {
+  # If name_override is specified, use that - otherwise use the name_prefix with a random string
+  instance_name        = length(var.name_override) == 0 ? format("%s-%s", var.name_prefix, random_id.name.hex) : var.name_override
+  private_ip_name      = "private-ip-${random_id.name.hex}"
+}
 
-  role_ref {
-    kind      = "ClusterRole"
-    name      = "cluster-admin"
-    api_group = "rbac.authorization.k8s.io"
-  }
+# ------------------------------------------------------------------------------
+# CREATE VPC PEERING BETWEEN PRIVATE NETWORK AND CLOUD SQL
+# ------------------------------------------------------------------------------
 
-  subject {
-    kind      = "User"
-    name      = data.google_client_openid_userinfo.terraform_user.email
-    api_group = "rbac.authorization.k8s.io"
-  }
+# Reserve global internal address range for the peering
+resource "google_compute_global_address" "private_ip_address" {
+  provider      = google-beta
+  name          = local.private_ip_name
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = module.vpc_network.network
+}
 
-  subject {
-    kind      = "Group"
-    name      = "system:masters"
-    api_group = "rbac.authorization.k8s.io"
+# Establish VPC network peering connection using the reserved address range
+resource "google_service_networking_connection" "private_vpc_connection" {
+  provider                = google-beta
+  network                 = module.vpc_network.network
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+}
+
+# ------------------------------------------------------------------------------
+# CREATE DATABASE INSTANCE WITH PRIVATE IP
+# ------------------------------------------------------------------------------
+
+module "postgres" {
+  # When using these modules in your own templates, you will need to use a Git URL with a ref attribute that pins you
+  # to a specific version of the modules, such as the following example:
+  # source = "github.com/gruntwork-io/terraform-google-sql.git//modules/cloud-sql?ref=v0.6.0"
+  source  = "./modules/cloud-sql"
+  project = var.project
+  region  = var.region
+  name    = local.instance_name
+  db_name = var.db_name
+
+  engine       = var.postgres_version
+  machine_type = var.machine_type
+
+  # These together will construct the master_user privileges, i.e.
+  # 'master_user_name'@'master_user_host' IDENTIFIED BY 'master_user_password'.
+  # These should typically be set as the environment variable TF_VAR_master_user_password, etc.
+  # so you don't check these into source control."
+  master_user_password = var.master_user_password
+
+  master_user_name = var.master_user_name
+  master_user_host = "%"
+
+  # Pass the private network link to the module
+  private_network = module.vpc_network.network
+
+  # Wait for the vpc connection to complete
+  dependencies = [google_service_networking_connection.private_vpc_connection.network]
+
+  custom_labels = {
+    test-id = "caldera-postgres-private-ip"
   }
 }
 
+
 # ---------------------------------------------------------------------------------------------------------------------
-# DEPLOY A SAMPLE CHART
-# A chart repository is a location where packaged charts can be stored and shared. Define Bitnami Helm repository location,
-# so Helm can install the nginx chart.
+# DEPLOY Caldera app
 # ---------------------------------------------------------------------------------------------------------------------
 
-resource "helm_release" "nginx" {
-  depends_on = [google_container_node_pool.node_pool]
+# Retrieve an access token as the Terraform runner
+data "google_client_config" "provider" {}
 
-  repository = "https://charts.bitnami.com/bitnami"
-  name       = "nginx"
-  chart      = "nginx"
+provider "kubectl" {
+  host                   = "https://${module.gke_cluster.endpoint}"
+  token                  = data.google_client_config.provider.access_token
+  cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
 }
 
-# ---------------------------------------------------------------------------------------------------------------------
-# WORKAROUNDS
-# ---------------------------------------------------------------------------------------------------------------------
-
-# This is a workaround for the Kubernetes and Helm providers as Terraform doesn't currently support passing in module
-# outputs to providers directly.
-data "template_file" "gke_host_endpoint" {
-  template = module.gke_cluster.endpoint
+provider "kubernetes" {
+  load_config_file       = false
+  host                   = "https://${module.gke_cluster.endpoint}"
+  token                  = data.google_client_config.provider.access_token
+  cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
 }
 
-data "template_file" "access_token" {
-  template = data.google_client_config.client.access_token
+resource "kubectl_manifest" "create_namespace" {
+    yaml_body = templatefile("${path.module}/create-namespace.yaml", {GKE_NAMESPACE=var.GKE_NAMESPACE})
 }
 
-data "template_file" "cluster_ca_certificate" {
-  template = module.gke_cluster.cluster_ca_certificate
+resource "kubectl_manifest" "deploy_envars_into_pods" {
+    yaml_body = templatefile("${path.module}/deploy_with_vars_as_envars.yaml",
+    {
+      AUTHTIME_CLIENT_ID=var.AUTHTIME_CLIENT_ID,
+      AUTHTIME_CLIENT_SECRET=var.AUTHTIME_CLIENT_SECRET,
+      AUTHTIME_HOST=var.AUTHTIME_HOST,
+      AUTHTIME_TOKEN_URI=var.AUTHTIME_TOKEN_URI,
+      AUTHTIME_PROFILE_URI=var.AUTHTIME_PROFILE_URI,
+      AUTHTIME_INVITATION_URI=var.AUTHTIME_INVITATION_URI,
+      OAUTH_REDIRECT_URL=var.OAUTH_REDIRECT_URL,
+      OAUTH_INVITER_ID=var.OAUTH_INVITER_ID,
+      OAUTH_ORG_ID=var.OAUTH_ORG_ID,
+      CALDERA_SERVER_SECRET_KEY=var.CALDERA_SERVER_SECRET_KEY,
+      SPARKPOST_API_KEY=var.SPARKPOST_API_KEY,
+      GKE_NAMESPACE=var.GKE_NAMESPACE,
+      DATABASE_HOST= module.postgres.master_private_ip_address,
+      DATABASE_PORT=var.DATABASE_PORT,
+      DATABASE_NAME=var.DATABASE_NAME,
+      DATABASE_USER=var.master_user_name,
+      DATABASE_PASS=var.master_user_password,
+      CONTAINER_HTTP_PORT=var.CONTAINER_HTTP_PORT,
+      DJANGO_SETTINGS_MODULE=var.DJANGO_SETTINGS_MODULE
+    })
+}
+
+resource "kubectl_manifest" "expose_caldera_app" {
+    yaml_body = templatefile("${path.module}/expose_gke_deployment.yaml" ,
+    {
+      GKE_NAMESPACE=var.GKE_NAMESPACE,
+      CONTAINER_HTTP_PORT=var.CONTAINER_HTTP_PORT
+    })
 }

@@ -198,8 +198,6 @@ provider "kubernetes" {
   load_config_file       = false
   host                   = "https://${module.gke_cluster.endpoint}"
   token                   = data.google_client_config.provider.access_token
-  //client_certificate     = module.gke_cluster.client_certificate
-  //client_key             = module.gke_cluster.client_key
   cluster_ca_certificate = module.gke_cluster.cluster_ca_certificate
 }
 

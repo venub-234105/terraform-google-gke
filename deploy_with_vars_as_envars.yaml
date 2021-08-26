@@ -15,7 +15,15 @@ spec:
     spec:
       containers:
       - name: caldera-app
-        image: gcr.io/bigquery-poc-309702/caldera-server@sha256:9965df5085a636b268b1f8e058247b2fc7a19f3a87e40cc480364e4f990ae449
+        image: gcr.io/bigquery-poc-309702/caldera-server
+        args:
+          - /bin/sh
+          - -c
+          - |
+            echo "Migrating the database before starting the server"
+            django-admin migrate
+            echo "Starting Gunicorn."
+            exec gunicorn --bind 0.0.0.0:8000 caldera_server.wsgi
         env:
           - name: AUTHTIME_CLIENT_ID
             value: ${AUTHTIME_CLIENT_ID}
@@ -39,7 +47,19 @@ spec:
             value: ${CALDERA_SERVER_SECRET_KEY}
           - name: SPARKPOST_API_KEY
             value: ${SPARKPOST_API_KEY}
-          - name: RDS_USERNAME
-            value: ${RDS_USERNAME}
-          - name: RDS_PASSWORD
-            value: ${RDS_PASSWORD}
+          - name: DJANGO_SETTINGS_MODULE
+            value: ${DJANGO_SETTINGS_MODULE}
+          - name: CONTAINER_HTTP_PORT
+            value: '${CONTAINER_HTTP_PORT}'
+          - name: DB_HOST
+            value: ${DATABASE_HOST}
+          - name: DB_PORT
+            value: '${DATABASE_PORT}'
+          - name: DB_NAME
+            value: ${DATABASE_NAME}
+          - name: DB_USER
+            value: ${DATABASE_USER}
+          - name: DB_PASSWORD
+            value: ${DATABASE_PASS}
+      imagePullSecrets:
+        - name: docker-auth-k8
