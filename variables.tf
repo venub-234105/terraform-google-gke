@@ -12,13 +12,13 @@ variable "project" {
 variable "location" {
   description = "The location (region or zone) of the GKE cluster."
   type        = string
-  default     = "us-west1"
+  default     = "us-central1"
 }
 
 variable "region" {
   description = "The region for the network. If the cluster is regional, this must be the same region. Otherwise, it should be the region of the zone."
   type        = string
-  default     = "us-west1"
+  default     = "us-central1"
 }
 
 # Note, after a name db instance is used, it cannot be reused for up to one week.
@@ -57,7 +57,7 @@ variable "cluster_service_account_name" {
 variable "cluster_service_account_description" {
   description = "A description of the custom service account used for the GKE cluster."
   type        = string
-  default     = "Example GKE Cluster Service Account managed by Terraform"
+  default     = "GKE Cluster Service Account managed by Terraform"
 }
 
 # Kubectl options
